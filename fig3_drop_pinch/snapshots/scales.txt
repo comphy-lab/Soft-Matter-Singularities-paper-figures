@@ -1,0 +1,15 @@
+t0=14.499572113611
+Oh=0.01
+Oha=0.0001
+x_center=1.77117
+xmin=0.62117
+xmax=2.92117
+rmax=1.05
+vel_vmin=0
+vel_vmax=3
+log10_diss_vmin=-3
+log10_diss_vmax=1
+vel_cmap=Blues
+diss_cmap=hot_r
+velocity render scale rounded from command-line vmax=2.95332 to the displayed vmax=3.
+dissipation limits fixed from command line.

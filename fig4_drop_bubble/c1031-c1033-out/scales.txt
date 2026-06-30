@@ -1,0 +1,12 @@
+t0=5.194252
+Oh=0.01
+x_center=6.283185307179586
+xmin=0.0
+xmax=12.566370614359172
+rmax=1.473
+vel_vmin=0.0
+vel_vmax=10.0
+vel_cmap=Blues
+field=velocity magnitude |u| on BOTH mirror halves (velocity-only)
+window=full computational domain axially (xmin=0, xmax=L0=4*pi); rmax = 1.08 * max|interface r| across this case's frames
+Velocity-only, full-domain, BUBBLE vmax=10. Elastic bubble (Oh=0.01,De=1e30,Ec=0.1). Approach frames (0,5,6) from c1031-out (level 14); near-pinch (7,8) from c1033-out (level 10, COARSER). t0=5.194 (c1033 KE blow-up). rmax=1.473=1.08*max|r|(1.364).

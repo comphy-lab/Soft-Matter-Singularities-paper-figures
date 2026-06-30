@@ -1,0 +1,12 @@
+t0=4.5069
+Oh=0.01
+x_center=6.283185307179586
+xmin=0.0
+xmax=12.566370614359172
+rmax=1.44
+vel_vmin=0.0
+vel_vmax=10.0
+vel_cmap=Blues
+field=velocity magnitude |u| on BOTH mirror halves (velocity-only)
+window=full computational domain axially (xmin=0, xmax=L0=4*pi); rmax = 1.08 * max|interface r| across this case's frames
+Velocity-only, full-domain, BUBBLE vmax=10. Newtonian bubble Oh=0.01. CORRECTED t0=4.5069 = FIRST true neck pinch-off (log: h_min collapses to ~3e-6 at t=4.50687 then rebounds; getFacet: 4.5060 neck connected min r=0.017). Earlier t0=4.7747 (h_min~2.8e-11) was a LATER satellite event. Neck at cavity equator x~6.3. t0_minus=4.5060 (connected). t0_plus=4.5570: earliest snapshot after pinch with a CLEARLY visible gap - axial lobe-tip separation 0.337 (~0.86x local cavity radius); the immediate post-pinch 4.5070 had only a sub-visible hairline gap. rmax=1.440 kept as before (max|r| at 4.5570 is 1.345, fits within the window with margin).

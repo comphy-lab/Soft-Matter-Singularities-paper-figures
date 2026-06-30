@@ -1,0 +1,12 @@
+t0=14.49957211361072
+Oh=0.01
+x_center=6.283185307179586
+xmin=0.0
+xmax=12.566370614359172
+rmax=2.166
+vel_vmin=0.0
+vel_vmax=3.0
+vel_cmap=Blues
+field=velocity magnitude |u| on BOTH mirror halves (velocity-only)
+window=full computational domain axially (xmin=0, xmax=L0=4*pi); rmax = 1.08 * max|interface r| across this case's frames
+Velocity-only, full-domain, DROP vmax=3. Newtonian drop Oh=0.01 (SAME case as Figure 3). Pinch-off t0=14.49957211361072. Frames: 0, 0.95*t0, 0.98*t0, t0-(14.4995 last clean pre-pinch), t0+(14.5496 first post-pinch, separated). 0.995*t0 frame dropped per spec. rmax=2.166=1.08*max|r|(2.005, at t0+).
