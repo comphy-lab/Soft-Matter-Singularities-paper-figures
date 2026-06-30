@@ -1,2 +1,2 @@
-c1023 fit_kind=inertial_2_3_spline A=0.710656594682 anchor_max_tau=1.2e-05 rms_log_residual=0.0700723241275 smooth=0.5 nfit=92 nfit_prefactor=171
-c1024 fit_kind=viscous_slope_spline slope=7.09 anchor_max_tau=1.2e-05 rms_log_residual=0.0695602768882 smooth=0.5 nfit=90
+c1023 fit_kind=inertial_2_3_spline A=0.715755628856 anchor_max_tau=1.2e-05 rms_log_residual=0.0692451941325 smooth=0.5 nfit=92 nfit_prefactor=526
+c1024 fit_kind=viscous_slope_spline slope=7.09 anchor_max_tau=1.2e-05 rms_log_residual=0.0695782948455 smooth=0.5 nfit=90

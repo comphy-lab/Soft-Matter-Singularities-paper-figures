@@ -47,8 +47,15 @@ EXPERIMENT_SOURCE = HERE / "drop-water-only.pdf"
 WATER_PANEL_PNG = PANEL_DIR / "drop-water-only.png"
 WATER_PANEL_PDF = PANEL_DIR / "drop-water-only.pdf"
 
-ANALYSIS_DIR = Path("/Users/comphy-mac/Documents/Projects-cowork/share-files/elastic-pinchoff-analysis")
-LOG_DIR = ANALYSIS_DIR / "logs"
+ANALYSIS_DIR = Path(os.environ.get(
+    "FIG3_ANALYSIS_DIR",
+    "/Users/comphy-mac/Documents/Projects-cowork/share-files/elastic-pinchoff-analysis",
+))
+LOCAL_LOG_DIR = DATA_DIR / "raw_logs"
+LOG_DIR = Path(os.environ.get(
+    "FIG3_LOG_DIR",
+    str(LOCAL_LOG_DIR if LOCAL_LOG_DIR.exists() else ANALYSIS_DIR / "logs"),
+))
 REDUCED_DATA = DATA_DIR / "fig3_l16_hmin_dhdt.csv"
 FIT_SUMMARY = DATA_DIR / "fig3_fit_summary.txt"
 
@@ -181,10 +188,6 @@ def prepare_case(case: dict[str, object]) -> dict[str, object]:
     raw = read_log(case["log"])  # type: ignore[index]
     t = raw[:, 2]
     h = raw[:, 3]
-    keep_unique = np.r_[True, np.diff(t) > 0]
-    raw = raw[keep_unique]
-    t = raw[:, 2]
-    h = raw[:, 3]
     tau = float(case["t0"]) - t
     mask_h = np.isfinite(tau) & np.isfinite(h) & (tau > 0) & (h > 0)
     out = dict(case)
@@ -287,7 +290,8 @@ def logbin_for_fit(tau: np.ndarray, h: np.ndarray, mask: np.ndarray, bins: int =
 
 def inertial_fit(tau: np.ndarray, h: np.ndarray) -> dict[str, object]:
     mask = np.isfinite(tau) & np.isfinite(h) & (tau > 0) & (h > 5e-4) & (h < 5e-2)
-    x, y = logbin_for_fit(tau, h, mask)
+    x = tau[mask]
+    y = h[mask]
     prefactor = float(np.exp(np.mean(np.log(y) - (2.0 / 3.0) * np.log(x))))
     return {"kind": "inertial_2_3", "A": prefactor, "nfit": int(x.size)}
 
@@ -466,6 +470,7 @@ def plot_hmin(ax: plt.Axes, prepared: list[dict[str, object]], show_ylabel: bool
             alpha=0.88,
             label=case["label"],
             zorder=4,
+            rasterized=True,
         )
         scatter_handles.append(handle)
 
@@ -531,6 +536,7 @@ def plot_dhdt(ax: plt.Axes, prepared: list[dict[str, object]], show_ylabel: bool
             alpha=0.88,
             label=case["label"],
             zorder=3,
+            rasterized=True,
         )
         scatter_handles.append(handle)
 

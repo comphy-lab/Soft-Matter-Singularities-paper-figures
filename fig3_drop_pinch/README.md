@@ -9,6 +9,9 @@ This folder contains the source assets for `../fig3_drop_pinch.pdf`.
   on Hamilton from frame indices `0,5,6,7,8,9`.
 - `panels/fig3_hmin_l16.pdf` and `panels/fig3_dhdt_l16.pdf` are the quantitative
   subpanels used in row 2.
+- `data/raw_logs/c1023-log` and `data/raw_logs/c1024-log` are the full
+  lightweight Basilisk time-series logs used to regenerate the quantitative
+  panels.
 - `data/fig3_l16_hmin_dhdt.csv` is reduced plotting data. The thinning-rate
   column is the analytic derivative of fits through `h_min(t)`, not a
   finite-difference derivative of the raw log. The quantitative panels plot the
