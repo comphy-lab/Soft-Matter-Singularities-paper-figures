@@ -463,14 +463,13 @@ def plot_hmin(ax: plt.Axes, prepared: list[dict[str, object]], show_ylabel: bool
         handle = ax.scatter(
             tau_pts,
             h_pts,
-            s=5.8,
+            s=7.2,
             c=case["colour"],
             marker=case["marker"],
             linewidths=0.0,
             alpha=0.88,
             label=case["label"],
             zorder=4,
-            rasterized=True,
         )
         scatter_handles.append(handle)
 
@@ -529,14 +528,13 @@ def plot_dhdt(ax: plt.Axes, prepared: list[dict[str, object]], show_ylabel: bool
         handle = ax.scatter(
             tau_pts[mask_pts],
             d_pts[mask_pts],
-            s=5.8,
+            s=7.2,
             c=case["colour"],
             marker=case["marker"],
             linewidths=0.0,
             alpha=0.88,
             label=case["label"],
             zorder=3,
-            rasterized=True,
         )
         scatter_handles.append(handle)
 
