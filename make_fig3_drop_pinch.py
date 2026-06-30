@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import csv
 import math
+import os
 import shutil
 import subprocess
 import sys
@@ -192,6 +193,63 @@ def prepare_case(case: dict[str, object]) -> dict[str, object]:
     out["raw_rows"] = raw.shape[0]
     out["h_rows"] = int(mask_h.sum())
     return out
+
+
+def fit_summary_by_case() -> dict[str, dict[str, str]]:
+    if not FIT_SUMMARY.exists():
+        return {}
+    out: dict[str, dict[str, str]] = {}
+    for line in FIT_SUMMARY.read_text().splitlines():
+        parts = line.split()
+        if not parts:
+            continue
+        case = parts[0]
+        fields: dict[str, str] = {}
+        for part in parts[1:]:
+            if "=" in part:
+                key, value = part.split("=", 1)
+                fields[key] = value
+        out[case] = fields
+    return out
+
+
+def load_reduced_data() -> list[dict[str, object]]:
+    if not REDUCED_DATA.exists():
+        raise FileNotFoundError(
+            f"Missing raw logs and reduced data. Expected {REDUCED_DATA} for a portable rebuild."
+        )
+    fit_summary = fit_summary_by_case()
+    rows_by_case: dict[str, list[dict[str, str]]] = {}
+    with REDUCED_DATA.open() as f:
+        for row in csv.DictReader(f):
+            rows_by_case.setdefault(row["case"], []).append(row)
+
+    prepared: list[dict[str, object]] = []
+    for case in CASES:
+        name = str(case["case"])
+        rows = rows_by_case.get(name)
+        if not rows:
+            raise RuntimeError(f"No reduced Figure 3 data found for {name} in {REDUCED_DATA}")
+        tau = np.asarray([float(row["tau"]) for row in rows])
+        order = np.argsort(tau)
+        h = np.asarray([float(row["hmin"]) for row in rows])[order]
+        h_fit = np.asarray([float(row["hfit"]) for row in rows])[order]
+        dhdt_fit = np.asarray([float(row["minus_dhdt_fit"]) for row in rows])[order]
+        tau = tau[order]
+        out = dict(case)
+        out["tau"] = tau
+        out["h"] = h
+        out["tau_fit"] = tau
+        out["h_fit"] = h_fit
+        out["dhdt_fit"] = dhdt_fit
+        out["h_fit_raw_tau"] = h_fit
+        out["dhdt_fit_raw_tau"] = dhdt_fit
+        out["raw_rows"] = len(rows)
+        out["h_rows"] = len(rows)
+        out["fit_kind"] = rows[0].get("fit_kind", "")
+        out["fit_meta"] = fit_summary.get(name, {})
+        prepared.append(out)
+    return prepared
 
 
 def reduce_data(prepared: list[dict[str, object]]) -> None:
@@ -652,7 +710,13 @@ def build_composite(prepared: list[dict[str, object]]) -> tuple[plt.Figure, list
 
 
 def copy_to_share_files() -> None:
-    share = Path("/Users/comphy-mac/Documents/Projects-cowork/share-files/soft-matter-singularities")
+    share_env = os.environ.get("SMS_SHARE_DIR")
+    if share_env:
+        share = Path(share_env).expanduser()
+    else:
+        share = Path("/Users/comphy-mac/Documents/Projects-cowork/share-files/soft-matter-singularities")
+        if not share.parent.exists():
+            return
     share.mkdir(parents=True, exist_ok=True)
     for name in ("fig3_drop_pinch.pdf", "fig3_drop_pinch.png"):
         shutil.copy2(HERE / name, share / name)
@@ -662,9 +726,13 @@ def build_all(use_tex: bool = True) -> None:
     ensure_dirs()
     configure_matplotlib(use_tex)
     save_water_panel(use_tex)
-    prepared = [prepare_case(case) for case in CASES]
-    apply_fits(prepared)
-    reduce_data(prepared)
+    if all(Path(case["log"]).exists() for case in CASES):
+        prepared = [prepare_case(case) for case in CASES]
+        apply_fits(prepared)
+        reduce_data(prepared)
+    else:
+        print("[info] Raw Figure 3 logs not found; rebuilding from curated reduced data.")
+        prepared = load_reduced_data()
     save_plot_panels(prepared)
     fig, vector_panels = build_composite(prepared)
     from pdf_vector_stamp import save_vector_composite

@@ -248,7 +248,7 @@ def plot_theta_panel(ax, data: dict[str, np.ndarray], regularised: bool) -> None
         ax.set_xlabel(r"$X$")
     ax.text(
         0.98,
-        0.08,
+        0.34,
         r"$Ca=0.01$",
         transform=ax.transAxes,
         ha="right",
@@ -256,7 +256,22 @@ def plot_theta_panel(ax, data: dict[str, np.ndarray], regularised: bool) -> None
         color=MUTED,
         fontsize=6.8,
     )
-    ax.legend(loc="upper left", bbox_to_anchor=(0.19, 0.995), frameon=True, framealpha=0.95, borderpad=0.32)
+    if regularised:
+        ax.legend(
+            loc="upper left",
+            bbox_to_anchor=(0.19, 0.995),
+            frameon=True,
+            framealpha=0.95,
+            borderpad=0.32,
+        )
+    else:
+        ax.legend(
+            loc="lower right",
+            bbox_to_anchor=(0.985, 0.08),
+            frameon=True,
+            framealpha=0.95,
+            borderpad=0.32,
+        )
     style_log_axis(ax)
 
 
