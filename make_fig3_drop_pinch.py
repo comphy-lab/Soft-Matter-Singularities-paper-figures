@@ -429,16 +429,11 @@ def style_log_axis(ax: plt.Axes) -> None:
     ax.minorticks_on()
 
 
-def sample_fit_points(case: dict[str, object], ykey: str, n: int = 90) -> tuple[np.ndarray, np.ndarray]:
-    tau = np.asarray(case["tau_fit"], dtype=float)
+def positive_curve_points(case: dict[str, object], xkey: str, ykey: str) -> tuple[np.ndarray, np.ndarray]:
+    tau = np.asarray(case[xkey], dtype=float)
     y = np.asarray(case[ykey], dtype=float)
     mask = np.isfinite(tau) & np.isfinite(y) & (tau > 0) & (y > 0)
-    tau = tau[mask]
-    y = y[mask]
-    if tau.size <= n:
-        return tau, y
-    idx = np.unique(np.round(np.linspace(0, tau.size - 1, n)).astype(int))
-    return tau[idx], y[idx]
+    return tau[mask], y[mask]
 
 
 def plot_hmin(ax: plt.Axes, prepared: list[dict[str, object]], show_ylabel: bool = True) -> None:
@@ -460,15 +455,15 @@ def plot_hmin(ax: plt.Axes, prepared: list[dict[str, object]], show_ylabel: bool
 
     scatter_handles = []
     for case in prepared:
-        tau_pts, h_pts = sample_fit_points(case, "h_fit")
+        tau_pts, h_pts = positive_curve_points(case, "tau", "h")
         handle = ax.scatter(
             tau_pts,
             h_pts,
-            s=15.5,
+            s=5.8,
             c=case["colour"],
             marker=case["marker"],
             linewidths=0.0,
-            alpha=0.92,
+            alpha=0.88,
             label=case["label"],
             zorder=4,
         )
@@ -504,12 +499,14 @@ def plot_dhdt(ax: plt.Axes, prepared: list[dict[str, object]], show_ylabel: bool
     xmax = max(float(np.max(case["tau_fit"])) for case in prepared) * 1.10
     all_d = []
     for case in prepared:
-        mask = (case["tau_fit"] >= xmin) & np.isfinite(case["dhdt_fit"]) & (case["dhdt_fit"] > 0)
-        all_d.append(case["dhdt_fit"][mask])
+        tau_rate = case["tau"] if "dhdt_fit_raw_tau" in case else case["tau_fit"]
+        d_rate = case["dhdt_fit_raw_tau"] if "dhdt_fit_raw_tau" in case else case["dhdt_fit"]
+        mask = (tau_rate >= xmin) & np.isfinite(d_rate) & (d_rate > 0)
+        all_d.append(d_rate[mask])
 
     yvals = np.concatenate(all_d)
     ymin = max(float(np.percentile(yvals, 0.1)) * 0.60, 1e-3)
-    ymax = float(np.percentile(yvals, 99.8)) * 1.80
+    ymax = float(yvals.max()) * 1.10
     xguide = np.logspace(math.floor(math.log10(xmin)), math.ceil(math.log10(xmax)), 400)
 
     a23, _ = fit_two_thirds(prepared)
@@ -520,16 +517,18 @@ def plot_dhdt(ax: plt.Axes, prepared: list[dict[str, object]], show_ylabel: bool
 
     scatter_handles = []
     for case in prepared:
-        tau_pts, d_pts = sample_fit_points(case, "dhdt_fit")
+        rate_key = "dhdt_fit_raw_tau" if "dhdt_fit_raw_tau" in case else "dhdt_fit"
+        tau_key = "tau" if rate_key == "dhdt_fit_raw_tau" else "tau_fit"
+        tau_pts, d_pts = positive_curve_points(case, tau_key, rate_key)
         mask_pts = tau_pts >= xmin
         handle = ax.scatter(
             tau_pts[mask_pts],
             d_pts[mask_pts],
-            s=15.5,
+            s=5.8,
             c=case["colour"],
             marker=case["marker"],
             linewidths=0.0,
-            alpha=0.92,
+            alpha=0.88,
             label=case["label"],
             zorder=3,
         )
