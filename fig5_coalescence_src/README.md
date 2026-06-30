@@ -7,7 +7,7 @@ demonstrates self-similarity / loss of memory.
 
 The hydrodynamics are the **clean** (surfactant-free, `beta = Pe = 0`) limit of
 the sessile-drop lubrication model of Talukdar et al. The early-time viscous
-neck law and the constant `0.272` are from Hernández-Sánchez et al., *Symmetric
+bridge-height law and the constant `0.272` are from Hernández-Sánchez et al., *Symmetric
 and asymmetric coalescence of drops on a substrate*, Phys. Rev. Lett. **109**,
 184502 (2012), [arXiv:1207.2635](https://arxiv.org/abs/1207.2635).
 
@@ -15,11 +15,11 @@ and asymmetric coalescence of drops on a substrate*, Phys. Rev. Lett. **109**,
 
 - **(a)** schematic: two spherical caps meeting at a microscopic contact on a substrate.
 - **(b)** simulated free-surface profiles `h(x,t)` for `theta = 10°` (bridge growth).
-- **(c)** neck height compensated by `0.272 theta^4` collapses six contact angles
-  (`theta = 1°…20°`) onto the universal line `h0 = 0.272 theta^4 t`.
-- **(d)** self-similar collapse `H = h/h0(t)` vs `xi = theta x / h0(t)` for
+- **(c)** bridge height compensated by `0.272 theta^4` collapses six contact angles
+  (`theta = 1°…20°`) onto the universal line `hb = 0.272 theta^4 t`.
+- **(d)** self-similar collapse `H = h/hb(t)` vs `xi = theta x / hb(t)` for
   `theta = 5°, 10°`, overlaid with the **theory** master curve (shooting solution
-  of the similarity ODE). Normalising by the *measured* neck height `h0(t)`
+  of the similarity ODE). Normalising by the *measured* bridge height `hb(t)`
   removes the early-time amplitude drift and gives a tight collapse.
 
 ## Pipeline
@@ -36,9 +36,9 @@ similarity_solution.py ->  similarity_master.csv ---/   (theory curve for panel 
    (columns `x, h, p`).
 2. **Reduce** each run with `reduce_fig5.py <run_dir> <theta_deg> <out.npz>` to a
    compact bundle (`fig5_data_theta<deg>.npz`): bridge-history profiles, the
-   self-similar-window snapshots in `(xi, H)`, and the full neck history
-   `h0(t)`. The collapse window is the early-time self-similar band
-   `h0/(theta^4 t) in [0.27, 0.30]`. Bundles live in `../fig5_coalescence_data/`.
+   self-similar-window snapshots in `(xi, H)`, and the full bridge-height history
+   `hb(t)`. The collapse window is the early-time self-similar band
+   `hb/(theta^4 t) in [0.27, 0.30]`. Bundles live in `../fig5_coalescence_data/`.
 3. **Theory** master curve: `similarity_solution.py` solves the similarity ODE by
    shooting and writes `similarity_master.csv` (used by panel d).
 4. **Figure**: `make_fig5_coalescence.py` reads the bundles + master curve and
@@ -46,7 +46,7 @@ similarity_solution.py ->  similarity_master.csv ---/   (theory curve for panel 
 
 ## Similarity ODE (panel d theory)
 
-With `h = h0(t) F(eta)`, `eta = x/w`, `h0 = c theta^4 t`, `w = h0/theta`, the clean
+With `h = hb(t) F(eta)`, `eta = x/w`, `hb = c theta^4 t`, `w = hb/theta`, the clean
 lubrication equation `h_t = -(h^3 h_xxx / 3)_x` reduces to the autonomous ODE
 
 ```
@@ -75,7 +75,7 @@ Small angles need much longer end-times: the self-similar onset scales as
 `hp/(0.272 theta^4)` (≈ 0.025 for 20° but ≈ 4000 for 1°). A grid-refinement
 check (`theta = 10°`, `N = 5000 -> 8000`, refine `6 -> 9`) showed the collapse is
 already mesh-converged; the residual wing spread in panel (c) is physical
-(self-similarity holds only for `xi << theta/h0`), not a resolution effect.
+(self-similarity holds only for `xi << theta/hb`), not a resolution effect.
 
 ## Reproduce
 

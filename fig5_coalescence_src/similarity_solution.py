@@ -2,18 +2,18 @@
 r"""Self-similar master curve for clean viscous sessile-drop coalescence.
 
 In the lubrication (thin-film) limit, two clean sessile drops merging on a
-substrate grow a bridge whose neck height obeys the viscous-coalescence law
+substrate grow a bridge whose height obeys the viscous-coalescence law
 of Hernandez-Sanchez et al. (PRL 2012),
 
-    h_0(t) = c theta^4 t,   c = 0.272 ,
+    h_b(t) = c theta^4 t,   c = 0.272 ,
 
 and whose whole profile collapses onto a single self-similar master shape when
-written in the measured-neck-height variables
+written in the measured-bridge-height variables
 
-    H(xi) = h / h_0(t),     xi = theta x / h_0(t) .
+    H(xi) = h / h_b(t),     xi = theta x / h_b(t) .
 
-Substituting  h = h_0(t) F(eta),  eta = x / w(t),  with h_0 = c theta^4 t and
-w = h_0/theta = c theta^3 t  into the clean lubrication equation
+Substituting  h = h_b(t) F(eta),  eta = x / w(t),  with h_b = c theta^4 t and
+w = h_b/theta = c theta^3 t  into the clean lubrication equation
 
     h_t = -(h^3 h_xxx / 3)_x          (sigma = 1, no slip, no Marangoni)
 
@@ -49,7 +49,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import brentq
 
-C_STAR = 0.272      # viscous-coalescence prefactor h0 = c theta^4 t
+C_STAR = 0.272      # viscous-coalescence prefactor hb = c theta^4 t
 ETA_MAX = 10.0      # integration domain for the shoot (asymptotic wedge)
 
 

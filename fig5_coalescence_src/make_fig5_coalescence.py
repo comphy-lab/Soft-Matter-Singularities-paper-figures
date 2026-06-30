@@ -4,9 +4,9 @@
 Panels:
   (a) initiation: two spherical caps near contact on a substrate (schematic).
   (b) bridge time history h(x,t) from the clean lubrication simulation.
-  (c) neck height collapsed by the similarity law: h0/(0.272 theta^4) vs t for
-      several contact angles falls on the single line h0 = 0.272 theta^4 t.
-  (d) self-similar collapse h/h0(t) vs theta x/h0(t): snapshots from several
+  (c) bridge height collapsed by the similarity law: hb/(0.272 theta^4) vs t
+      for several contact angles falls on the single line hb = 0.272 theta^4 t.
+  (d) self-similar collapse h/hb(t) vs theta x/hb(t): snapshots from several
       contact angles fall on one master shape -> loss of memory / universality.
 
 The hydrodynamics are the clean (surfactant-free, beta=Pe=0) limit of the
@@ -212,7 +212,7 @@ def panel_history(ax: plt.Axes, d) -> None:
     cb.ax.tick_params(labelsize=6.5)
     cb.ax.minorticks_off()
     cb.ax.set_title(r"$t$", fontsize=9, pad=3)
-    ax.annotate("growing neck", xy=(0.0, 0.16 * hmax), xytext=(0.60, 0.62),
+    ax.annotate("growing bridge", xy=(0.0, 0.16 * hmax), xytext=(0.60, 0.62),
                 textcoords="axes fraction", ha="center", va="center",
                 fontsize=6.8, color=INK,
                 arrowprops=dict(arrowstyle="-|>", color=INK, lw=0.7,
@@ -294,8 +294,8 @@ def panel_collapse(ax: plt.Axes, bundles: dict) -> None:
     _draw_collapse(ax, bundles, lw_scale=1.0, theory_lw=1.4)
     ax.set_xlim(-5, 5)
     ax.set_ylim(0, 5)
-    ax.set_xlabel(r"$\xi = \theta x / h_0(t)$", fontsize=9, labelpad=1)
-    ax.set_ylabel(r"$\mathcal{H} = h / h_0(t)$", fontsize=9, labelpad=1)
+    ax.set_xlabel(r"$\xi = \theta x / h_b(t)$", fontsize=9, labelpad=1)
+    ax.set_ylabel(r"$\mathcal{H} = h / h_b(t)$", fontsize=9, labelpad=1)
     _time_gradient_legend(ax, bundles)
 
     # inset: strong zoom on the neck |xi| < 1, enlarged to fill the empty upper
@@ -314,7 +314,7 @@ def panel_collapse(ax: plt.Axes, bundles: dict) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Panel (c): neck height compared with the similarity law
+# Panel (c): bridge height compared with the similarity law
 # --------------------------------------------------------------------------- #
 def _subsample_log(t, y, n=30):
     m = t > 0
@@ -328,7 +328,7 @@ def _subsample_log(t, y, n=30):
 
 def panel_neck(ax: plt.Axes, bundles: dict) -> None:
     style_data_axis(ax)
-    panel_label(ax, "(c)", "neck height vs theory")
+    panel_label(ax, "(c)", "bridge height vs theory")
     ax.set_xscale("log")
     ax.set_yscale("log")
 
@@ -355,12 +355,12 @@ def panel_neck(ax: plt.Axes, bundles: dict) -> None:
     tref = np.logspace(np.log10(0.2), np.log10(tmax * 1.3), 100)
     ax.plot(tref, tref, color=THEORY, lw=1.7, zorder=6)   # prediction on top
     handles.append(plt.Line2D([], [], color=THEORY, lw=1.7,
-                              label=r"$h_0=0.272\,\theta^4 t$"))
+                              label=r"$h_b(t)=0.272\,\theta^4 t$"))
 
     ax.set_xlim(0.2, tmax * 2)
     ax.set_ylim(0.02, tmax * 2)
     ax.set_xlabel(r"$t$", fontsize=9, labelpad=1)
-    ax.set_ylabel(r"$h_0\,/\,(0.272\,\theta^4)$", fontsize=9, labelpad=1)
+    ax.set_ylabel(r"$h_b\,/\,(0.272\,\theta^4)$", fontsize=9, labelpad=1)
     leg = ax.legend(handles=handles, loc="lower right", fontsize=6.6,
                     frameon=True, handletextpad=0.3, borderpad=0.4,
                     labelspacing=0.3, columnspacing=0.8, ncol=2,
