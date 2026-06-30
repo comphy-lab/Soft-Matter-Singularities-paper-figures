@@ -708,9 +708,10 @@ def build_composite(prepared: list[dict[str, object]]) -> tuple[plt.Figure, list
     plot_dhdt(ax_d, prepared)
     ax_h.set_anchor("N")
     ax_d.set_anchor("N")
-    label_box = {"facecolor": "white", "edgecolor": "none", "alpha": 0.86, "pad": 0.35}
-    ax_h.text(0.025, 0.965, r"\textbf{(c)}", transform=ax_h.transAxes, ha="left", va="top", fontsize=8.6, bbox=label_box)
-    ax_d.text(0.025, 0.965, r"\textbf{(d)}", transform=ax_d.transAxes, ha="left", va="top", fontsize=8.6, bbox=label_box)
+    fig.canvas.draw()
+    for ax, label in ((ax_h, r"\textbf{(c)}"), (ax_d, r"\textbf{(d)}")):
+        pos = ax.get_position()
+        fig.text(pos.x0 - 0.007, pos.y1 - 0.001, label, ha="right", va="top", fontsize=8.6, color=INK)
     return fig, vector_panels
 
 
