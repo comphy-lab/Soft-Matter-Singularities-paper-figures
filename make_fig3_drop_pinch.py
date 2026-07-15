@@ -184,13 +184,56 @@ def read_log(path: Path) -> np.ndarray:
     return np.asarray(rows, dtype=float)
 
 
+def estimate_fixed_slope_t0(
+    t: np.ndarray,
+    h: np.ndarray,
+    slope: float,
+    pre_event_dt: float,
+    hmin: float,
+    hmax: float,
+) -> tuple[float, int, float]:
+    event_candidates = np.where(h < hmin)[0]
+    if event_candidates.size == 0:
+        raise RuntimeError("Cannot fit t0: no near-pinch event found.")
+    event_index = int(event_candidates[0])
+    event_time = float(t[event_index])
+    mask = (
+        np.isfinite(t)
+        & np.isfinite(h)
+        & (t < event_time)
+        & (t >= event_time - pre_event_dt)
+        & (h >= hmin)
+        & (h <= hmax)
+    )
+    if int(mask.sum()) < 5:
+        raise RuntimeError("Cannot fit t0: fixed-slope fit window has too few points.")
+    return float(np.mean(t[mask] + h[mask] / slope)), int(mask.sum()), event_time
+
+
 def prepare_case(case: dict[str, object]) -> dict[str, object]:
     raw = read_log(case["log"])  # type: ignore[index]
     t = raw[:, 2]
     h = raw[:, 3]
-    tau = float(case["t0"]) - t
-    mask_h = np.isfinite(tau) & np.isfinite(h) & (tau > 0) & (h > 0)
     out = dict(case)
+    if "fit_t0_linear_slope" in case:
+        slope = float(case["fit_t0_linear_slope"])
+        t0, nfit, event_time = estimate_fixed_slope_t0(
+            t,
+            h,
+            slope,
+            float(case.get("fit_t0_pre_event_dt", 0.05)),
+            float(case.get("fit_t0_hmin", 2e-4)),
+            float(case.get("fit_t0_hmax", 2e-2)),
+        )
+        out["t0"] = t0
+        out["t0_fit_meta"] = {
+            "t0_fixed_slope": f"{t0:.12g}",
+            "t0_fixed_slope_value": f"{slope:.12g}",
+            "t0_fit_n": nfit,
+            "t0_event_time": f"{event_time:.12g}",
+        }
+    tau = float(out["t0"]) - t
+    mask_h = np.isfinite(tau) & np.isfinite(h) & (tau > 0) & (h > 0)
     out["tau"] = tau[mask_h]
     out["h"] = h[mask_h]
     out["raw_rows"] = raw.shape[0]
@@ -326,11 +369,11 @@ def inertial_spline_fit(tau: np.ndarray, h: np.ndarray) -> dict[str, object]:
     }
 
 
-def viscous_spline_fit(tau: np.ndarray, h: np.ndarray) -> dict[str, object]:
+def viscous_spline_fit(tau: np.ndarray, h: np.ndarray, slope: float) -> dict[str, object]:
     mask = np.isfinite(tau) & np.isfinite(h) & (tau >= 2e-5) & (h > 2e-4) & (h < 0.55)
     x, y = logbin_for_fit(tau, h, mask, bins=95)
     log_x = np.log(x)
-    residual = np.log(y / (VISCOUS_SLOPE * x))
+    residual = np.log(y / (slope * x))
 
     anchor_end = min(float(x.min()) * 0.72, 1.2e-5)
     anchor_start = anchor_end / 1.0e4
@@ -345,7 +388,7 @@ def viscous_spline_fit(tau: np.ndarray, h: np.ndarray) -> dict[str, object]:
     return {
         "kind": "viscous_slope_spline",
         "spline": spline,
-        "slope": VISCOUS_SLOPE,
+        "slope": slope,
         "anchor_max_tau": float(anchor_tau.max()),
         "rms_log_residual": rms,
         "smooth": smooth,
@@ -393,19 +436,24 @@ def apply_fits(prepared: list[dict[str, object]]) -> None:
             case["h_fit"], case["dhdt_fit"] = inertial_spline_h_and_rate(tau_line, spline, A)
             case["h_fit_raw_tau"], case["dhdt_fit_raw_tau"] = inertial_spline_h_and_rate(tau, spline, A)
         else:
-            fit = viscous_spline_fit(tau, h)
+            slope = 0.0709 / float(case["oh"])
+            fit = viscous_spline_fit(tau, h, slope)
             spline = fit["spline"]
+            fit_meta = dict(case.get("t0_fit_meta", {}))
+            fit_meta.update(
+                {
+                    "slope": f"{slope:.12g}",
+                    "anchor_max_tau": f"{float(fit['anchor_max_tau']):.12g}",
+                    "rms_log_residual": f"{float(fit['rms_log_residual']):.12g}",
+                    "smooth": f"{float(fit['smooth']):.12g}",
+                    "nfit": fit["nfit"],
+                }
+            )
             case["fit_kind"] = fit["kind"]
-            case["fit_meta"] = {
-                "slope": f"{VISCOUS_SLOPE:.12g}",
-                "anchor_max_tau": f"{float(fit['anchor_max_tau']):.12g}",
-                "rms_log_residual": f"{float(fit['rms_log_residual']):.12g}",
-                "smooth": f"{float(fit['smooth']):.12g}",
-                "nfit": fit["nfit"],
-            }
+            case["fit_meta"] = fit_meta
             case["tau_fit"] = tau_line
-            case["h_fit"], case["dhdt_fit"] = viscous_spline_h_and_rate(tau_line, spline)
-            case["h_fit_raw_tau"], case["dhdt_fit_raw_tau"] = viscous_spline_h_and_rate(tau, spline)
+            case["h_fit"], case["dhdt_fit"] = viscous_spline_h_and_rate(tau_line, spline, slope)
+            case["h_fit_raw_tau"], case["dhdt_fit_raw_tau"] = viscous_spline_h_and_rate(tau, spline, slope)
 
 
 def fit_two_thirds(prepared: list[dict[str, object]]) -> tuple[float, int]:
@@ -448,9 +496,18 @@ def plot_hmin(ax: plt.Axes, prepared: list[dict[str, object]], show_ylabel: bool
     ymax = min(float(visible_h.max()) * 1.25, 1.5)
     xguide = np.logspace(math.floor(math.log10(xmin)), math.ceil(math.log10(xmax)), 400)
 
-    viscous = 0.0709 / 1e-2 * xguide
-    mask = (viscous >= ymin) & (viscous <= ymax)
-    viscous_handle = ax.plot(xguide[mask], viscous[mask], "--", color="black", lw=1.05, alpha=0.90, zorder=8, label=r"$0.0709\,\tau/Oh$")[0]
+    viscous_oh001 = 0.0709 / 1e-2 * xguide
+    mask = (viscous_oh001 >= ymin) & (viscous_oh001 <= ymax)
+    viscous_oh001_handle = ax.plot(
+        xguide[mask],
+        viscous_oh001[mask],
+        "--",
+        color="black",
+        lw=1.05,
+        alpha=0.90,
+        zorder=9,
+        label=r"$0.0709\,\tau/10^{-2}$",
+    )[0]
 
     a23, _ = fit_two_thirds(prepared)
     inertial = a23 * xguide ** (2.0 / 3.0)
@@ -484,8 +541,12 @@ def plot_hmin(ax: plt.Axes, prepared: list[dict[str, object]], show_ylabel: bool
         ax.set_ylabel(r"$h_{\min}/R_0$")
     ax.set_box_aspect(1)
     leg = ax.legend(
-        [*scatter_handles, viscous_handle, inertial_handle],
-        [r"$Oh=0$", r"$Oh=10^{-2}$", r"$0.0709\,\tau/Oh$", r"$\sim\tau^{2/3}$"],
+        [*scatter_handles, viscous_oh001_handle, inertial_handle],
+        [
+            *(str(case["label"]) for case in prepared),
+            r"$0.0709\,\tau/10^{-2}$",
+            r"$\sim\tau^{2/3}$",
+        ],
         frameon=True,
         facecolor="white",
         edgecolor="none",
@@ -550,7 +611,7 @@ def plot_dhdt(ax: plt.Axes, prepared: list[dict[str, object]], show_ylabel: bool
     ax.set_box_aspect(1)
     leg = ax.legend(
         [*scatter_handles, viscous_handle, inertial_handle],
-        [r"$Oh=0$", r"$Oh=10^{-2}$", r"$0.0709/Oh$", r"$\sim\tau^{-1/3}$"],
+        [*(str(case["label"]) for case in prepared), r"$0.0709/Oh$", r"$\sim\tau^{-1/3}$"],
         frameon=True,
         facecolor="white",
         edgecolor="none",
@@ -570,6 +631,10 @@ def save_plot_panels(prepared: list[dict[str, object]]) -> None:
         fig.tight_layout(pad=0.25)
         fig.savefig(PANEL_DIR / f"{stem}.pdf", dpi=300, bbox_inches="tight", pad_inches=0.02)
         fig.savefig(PANEL_DIR / f"{stem}.png", dpi=300, bbox_inches="tight", pad_inches=0.02)
+        if stem == "fig3_hmin_l16":
+            ANALYSIS_DIR.mkdir(parents=True, exist_ok=True)
+            fig.savefig(ANALYSIS_DIR / "hmin-vs-t0-minus-t-scatter-laws-L16.pdf", dpi=300, bbox_inches="tight", pad_inches=0.02)
+            fig.savefig(ANALYSIS_DIR / "hmin-vs-t0-minus-t-scatter-laws-L16.png", dpi=300, bbox_inches="tight", pad_inches=0.02)
         plt.close(fig)
 
     source_hmin = ANALYSIS_DIR / "hmin-vs-t0-minus-t-scatter-laws-L16.pdf"
